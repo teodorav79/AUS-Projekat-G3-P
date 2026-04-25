@@ -64,19 +64,19 @@ namespace ProcessingModule
                 {
                     foreach (var item in configuration.GetConfigurationItems().Where(x => x.RegistryType == PointType.DIGITAL_OUTPUT))
                     {
-                        processingManager.ExecuteReadCommand(item, transactionId++, configuration.UnitAddress, item.StartAddress, item.NumberOfRegisters);
+                        processingManager.ExecuteReadCommand(item, transactionId++, configuration.UnitAddress, item.StartAddress, 1);
                     }
                     Thread.Sleep(2000);
 
                     foreach (var item in configuration.GetConfigurationItems().Where(x => x.RegistryType == PointType.ANALOG_INPUT || x.RegistryType == PointType.ANALOG_OUTPUT))
                     {
-                        processingManager.ExecuteReadCommand(item, transactionId++, configuration.UnitAddress, item.StartAddress, item.NumberOfRegisters);
+                        processingManager.ExecuteReadCommand(item, transactionId++, configuration.UnitAddress, item.StartAddress, 1);
                     }
                     Thread.Sleep(3000);
                 }
                 catch(Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    stateUpdater.LogMessage(ex.Message);
                 }
             }
 

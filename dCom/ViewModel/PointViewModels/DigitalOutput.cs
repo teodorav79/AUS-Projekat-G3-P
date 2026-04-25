@@ -13,14 +13,16 @@ namespace dCom.ViewModel
 
 		protected override bool WriteCommand_CanExecute(object obj)
 		{
-			return !(CommandedValue < 0 || CommandedValue > 1);
-		}
+            //return !(CommandedValue < 0 || CommandedValue > 1);
+            return true;
+        }
 
         protected override void WriteCommand_Execute(object obj)
         {
             try
             {
-                this.processingManager.ExecuteWriteCommand(ConfigItem, configuration.GetTransactionId(), configuration.UnitAddress, address, (int)CommandedValue);
+                
+                this.processingManager.ExecuteWriteCommand(ConfigItem, configuration.GetTransactionId(), configuration.UnitAddress, address, CommandedValue==1?65280:0);
             }
             catch (Exception ex)
             {
