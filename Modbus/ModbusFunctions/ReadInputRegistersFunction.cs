@@ -31,11 +31,11 @@ namespace Modbus.ModbusFunctions
             request[0] = (byte)(p.TransactionId >> 8);
             request[1] = (byte)(p.TransactionId & 0xFF);
 
-            request[2] = 0;
-            request[3] = 0;
+            request[2] = (byte)(p.ProtocolId >> 8);
+            request[3] = (byte)(p.ProtocolId & 0xFF);
 
-            request[4] = 0;
-            request[5] = 6;
+            request[4] = (byte)(p.Length >> 8);
+            request[5] = (byte)(p.Length & 0xFF);
 
             request[6] = p.UnitId;
             request[7] = p.FunctionCode;
@@ -52,26 +52,29 @@ namespace Modbus.ModbusFunctions
         /// <inheritdoc />
         public override Dictionary<Tuple<PointType, ushort>, ushort> ParseResponse(byte[] response)
         {
-            var result = new Dictionary<Tuple<PointType, ushort>, ushort>();
-
             ModbusReadCommandParameters p = (ModbusReadCommandParameters)CommandParameters;
+            Dictionary<Tuple<PointType, ushort>, ushort> retVal = new Dictionary<Tuple<PointType, ushort>, ushort>();
 
-            for (int i = 0; i < p.Quantity; i++)
+            byte functionCode = response[7];
+
+            if (functionCode == (byte)(p.FunctionCode + 0x80))
             {
-                int index = 9 + i * 2;
-
-                ushort value = (ushort)((response[index] << 8) | response[index + 1]);
-
-                result.Add(
-                    new Tuple<PointType, ushort>(
-                        PointType.ANALOG_INPUT,
-                        (ushort)(p.StartAddress + i)
-                    ),
-                    value
-                );
+                HandeException(response[8]);
             }
 
-            return result;
+            int byteCount = response[8];
+            int registerCount = byteCount / 2;
+
+            for (int i = 0; i < registerCount; i++)
+            {
+                int dataIndex = 9 + (i * 2);
+                ushort value = (ushort)((response[dataIndex] << 8) | response[dataIndex + 1]);
+                ushort address = (ushort)(p.StartAddress + i);
+
+                retVal.Add(Tuple.Create(PointType.ANALOG_INPUT, address), value);
+            }
+
+            return retVal;
         }
     }
 }

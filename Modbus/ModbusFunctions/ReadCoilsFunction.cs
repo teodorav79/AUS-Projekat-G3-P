@@ -29,10 +29,10 @@ namespace Modbus.ModbusFunctions
 
             request[0] = (byte)(p.TransactionId >> 8);
             request[1] = (byte)(p.TransactionId & 0xFF);
-            request[2] = 0;
-            request[3] = 0;
-            request[4] = 0;
-            request[5] = 6;
+            request[2] = (byte)(p.ProtocolId >> 8);
+            request[3] = (byte)(p.ProtocolId & 0xFF);
+            request[4] = (byte)(p.Length >> 8);
+            request[5] = (byte)(p.Length & 0xFF);
             request[6] = p.UnitId;
             request[7] = p.FunctionCode;
             request[8] = (byte)(p.StartAddress >> 8);
@@ -46,19 +46,35 @@ namespace Modbus.ModbusFunctions
         /// <inheritdoc />
         public override Dictionary<Tuple<PointType, ushort>, ushort> ParseResponse(byte[] response)
         {
-            var result = new Dictionary<Tuple<PointType, ushort>, ushort>();
             ModbusReadCommandParameters p = (ModbusReadCommandParameters)CommandParameters;
+            Dictionary<Tuple<PointType, ushort>, ushort> retVal = new Dictionary<Tuple<PointType, ushort>, ushort>();
+
+            byte functionCode = response[7];
+
+            if (functionCode == (byte)(p.FunctionCode + 0x80))
+            {
+                HandeException(response[8]);
+            }
 
             int byteCount = response[8];
+
             for (int i = 0; i < p.Quantity; i++)
             {
-                int byteIndex = 9 + i / 8;
+                int byteIndex = i / 8;
                 int bitIndex = i % 8;
-                ushort value = ((ushort)((response[byteIndex] >> bitIndex) & 0x01));
-                result.Add(new Tuple<PointType, ushort>(PointType.DIGITAL_INPUT, (ushort)(p.StartAddress + i)), value);
-                 
+
+                if (byteIndex >= byteCount)
+                {
+                    break;
+                }
+
+                ushort value = (ushort)((response[9 + byteIndex] >> bitIndex) & 0x01);
+                ushort address = (ushort)(p.StartAddress + i);
+
+                retVal.Add(Tuple.Create(PointType.DIGITAL_OUTPUT, address), value);
             }
-            return result;
+
+            return retVal;
 
         }
     }
