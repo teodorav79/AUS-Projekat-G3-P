@@ -13,8 +13,8 @@ namespace dCom.ViewModel
 
 		protected override bool WriteCommand_CanExecute(object obj)
 		{
-			//return !(CommandedValue < 0 || CommandedValue > 1);
-		    return true;
+			return !(CommandedValue < 0 || CommandedValue > 1);
+		   
         }
 
         protected override void WriteCommand_Execute(object obj)
@@ -22,7 +22,7 @@ namespace dCom.ViewModel
             try
             {
                 
-                this.processingManager.ExecuteWriteCommand(ConfigItem, configuration.GetTransactionId(), configuration.UnitAddress, address, CommandedValue==1?65280:0);
+                this.processingManager.ExecuteWriteCommand(ConfigItem, configuration.GetTransactionId(), configuration.UnitAddress, address, (int)CommandedValue);
             }
             catch (Exception ex)
             {

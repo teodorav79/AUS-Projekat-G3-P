@@ -57,28 +57,31 @@ namespace ProcessingModule
         /// </summary>
 		private void Acquisition_DoWork()
 		{
-            ushort transactionId = 0;
             while (true)
             {
-                try
-                {
-                    foreach (var item in configuration.GetConfigurationItems().Where(x => x.RegistryType == PointType.DIGITAL_OUTPUT))
-                    {
-                        processingManager.ExecuteReadCommand(item, transactionId++, configuration.UnitAddress, item.StartAddress, 1);
-                    }
-                    Thread.Sleep(2000);
+                acquisitionTrigger.WaitOne();
 
-                    foreach (var item in configuration.GetConfigurationItems().Where(x => x.RegistryType == PointType.ANALOG_INPUT || x.RegistryType == PointType.ANALOG_OUTPUT))
-                    {
-                        processingManager.ExecuteReadCommand(item, transactionId++, configuration.UnitAddress, item.StartAddress, 1);
-                    }
-                    Thread.Sleep(3000);
-                }
-                catch(Exception ex)
+                foreach (IConfigItem item in configuration.GetConfigurationItems())
                 {
-                    stateUpdater.LogMessage(ex.Message);
+                    item.SecondsPassedSinceLastPoll++;
+
+                    if (item.SecondsPassedSinceLastPoll >= item.AcquisitionInterval)
+                    {
+                        try
+                        {
+                            processingManager.ExecuteReadCommand(item, configuration.GetTransactionId(),configuration.UnitAddress, item.StartAddress, item.NumberOfRegisters);
+                        }
+                        catch (Exception ex)
+                        {
+                            string message = $"{ex.TargetSite.ReflectedType.Name}.{ex.TargetSite.Name}: {ex.Message}";
+                            stateUpdater.LogMessage(message);
+                        }
+
+                        item.SecondsPassedSinceLastPoll = 0;
+                    }
                 }
             }
+            
 
         }
 
